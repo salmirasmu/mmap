@@ -71,6 +71,7 @@ int main(int argc, char** argv)
 
     char* filename = argv[1];
 
+	// Open file to get it's file descriptor, read-only mode
     int fd = open(filename, O_RDONLY);
     if (fd == -1)
     {
@@ -78,17 +79,22 @@ int main(int argc, char** argv)
     	return 1;
     }
 
+	// Get file stats
 	struct stat file_stats;
 	fstat(fd, &file_stats);
-	size_t file_size = file_stats.st_size;
+	size_t file_size = file_stats.st_size; // Store size of the file in bytes
 
+	// Use mmap system call to map the file contents to the process's memory space.
+	// Map memory in read-mode, MAP_SHARED shouldn't make much of a difference because
+	// we are only reading.
     char* mapped_file = (char*) mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
-    if (mapped_file == MAP_FAILED)
+	if (mapped_file == MAP_FAILED)
     {
         printf("File mapping failed.\n");
         return 1;
     }
-
+	
+	// word count
 	WC_Stats stats = count(mapped_file, file_size);
 	printf("%d %d %d %s\n", stats.line_count, stats.word_count, stats.char_count, filename);
 

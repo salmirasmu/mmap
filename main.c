@@ -1,3 +1,9 @@
+/**
+ * Word count with mmap syscall
+ * 
+ * Authors: Rasmus Salmi & Oskari Heinonen
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -7,26 +13,36 @@
 #include <sys/mman.h>
 #include <sys/stat.h>
 
-
+// Struct for storing wc statistics
 typedef struct {
 	unsigned int line_count;
 	unsigned int word_count;
 	unsigned int char_count; 
 } WC_Stats;
 
+/**
+ * @brief Count number of lines, words, and characters in a file (string)
+ * 
+ * @param file File as a string
+ * @param size Size of the file string in bytes
+ * @return WC_Stats Struct containing the counted values
+ */
 WC_Stats count(char* file, size_t size)
 {
 	WC_Stats stats = {0, 0, 0};
+	// Flag for checking if the last character was whitespace
 	bool previous_space = false;
 	
 	for (size_t i = 0; i < size; i++)
 	{
+		// Assume file ending to whitespace
 		if (file[i] == '\0')
 		{
 			break;
 		}
 		if (isspace(file[i]))
 		{
+			// Don't count as a word if multiple whitespaces back to back
 			if (!previous_space)
 			{
 				stats.word_count++;
@@ -64,16 +80,16 @@ int main(int argc, char** argv)
 
 	struct stat file_stats;
 	fstat(fd, &file_stats);
-	size_t mapped_size = file_stats.st_size;
+	size_t file_size = file_stats.st_size;
 
-    char* mapped_file = (char*) mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
+    char* mapped_file = (char*) mmap(NULL, file_size, PROT_READ, MAP_SHARED, fd, 0);
     if (mapped_file == MAP_FAILED)
     {
         printf("File mapping failed.\n");
         return 1;
     }
 
-	WC_Stats stats = count(mapped_file, mapped_size);
+	WC_Stats stats = count(mapped_file, file_size);
 	printf("%d %d %d %s\n", stats.line_count, stats.word_count, stats.char_count, filename);
 
 	return 0;

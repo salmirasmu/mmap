@@ -61,16 +61,19 @@ int main(int argc, char** argv)
     	printf("Cannot open '%s'.\n", filename);
     	return 1;
     }
-  
-    char* mapped_file = (char*) mmap(NULL, 4092, PROT_READ, MAP_SHARED, fd, 0);
+
+	struct stat file_stats;
+	fstat(fd, &file_stats);
+	size_t mapped_size = file_stats.st_size;
+
+    char* mapped_file = (char*) mmap(NULL, mapped_size, PROT_READ, MAP_SHARED, fd, 0);
     if (mapped_file == MAP_FAILED)
     {
         printf("File mapping failed.\n");
         return 1;
     }
 
-	WC_Stats stats = count(mapped_file, 4092);
-
+	WC_Stats stats = count(mapped_file, mapped_size);
 	printf("%d %d %d %s\n", stats.line_count, stats.word_count, stats.char_count, filename);
 
 	return 0;
